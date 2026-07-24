@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  subscriptions Subscription[]
+  payments      Payment[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Plan {
+  id            String          @id @default(cuid())
+  name          String          @unique
+  slug          String          @unique
+  description   String?
+  priceInCents  Int
+  currency      String          @default("USD")
+  interval      BillingInterval @default(MONTHLY)
+  features      Json
+  isPopular     Boolean         @default(false)
+  isActive      Boolean         @default(true)
+  subscriptions Subscription[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  userId                String
+  planId                String
+  status                SubscriptionStatus @default(PENDING)
+  gatewayCustomerId     String?
+  gatewaySubscriptionId String?            @unique
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean            @default(false)
+  cancelledAt           DateTime?
+  pendingPlanId         String?
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                  Plan               @relation(fields: [planId], references: [id])
+  payments              Payment[]
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id                     String        @id @default(cuid())
+  userId                 String
+  subscriptionId         String?
+  gatewayPaymentId       String?       @unique
+  gatewayCheckoutSession String?       @unique
+  amountInCents          Int
+  currency               String        @default("USD")
+  status                 PaymentStatus @default(PENDING)
+  failureReason          String?
+  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription           Subscription? @relation(fields: [subscriptionId], references: [id])
+  invoice                Invoice?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique
+  paymentId     String   @unique
+  amountInCents Int
+  currency      String   @default("USD")
+  pdfUrl        String?
+  issuedAt      DateTime @default(now())
+  payment       Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+}
+
+model WebhookEvent {
+  id           String        @id @default(cuid())
+  eventId      String        @unique
+  eventType    String
+  status       WebhookStatus @default(RECEIVED)
+  payload      Json
+  errorMessage String?
+  processedAt  DateTime?
+  createdAt    DateTime      @default(now())
+
+  @@index([eventType])
+  @@index([status])
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+}
