@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { CheckoutButton } from "@/components/checkout-button";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -108,16 +108,11 @@ export default async function PricingPage() {
                     ))}
                   </ul>
 
-                  <Link
-                    href={`/checkout?plan=${plan.slug}`}
-                    className={`rounded-xl px-5 py-3 text-center font-semibold transition ${
-                      plan.isPopular
-                        ? "bg-indigo-500 text-white hover:bg-indigo-400"
-                        : "bg-white text-slate-950 hover:bg-slate-200"
-                    }`}
-                  >
-                    Choose {plan.name}
-                  </Link>
+                  <CheckoutButton
+  planId={plan.id}
+  planName={plan.name}
+  isPopular={plan.isPopular}
+/>
                 </article>
               );
             })}
