@@ -109,10 +109,10 @@ export default async function PricingPage() {
                   </ul>
 
                   <CheckoutButton
-  planId={plan.id}
-  planName={plan.name}
-  isPopular={plan.isPopular}
-/>
+                   planId={plan.id}
+                   planName={plan.name}
+                   isPopular={plan.isPopular}
+                   />
                 </article>
               );
             })}
