@@ -3,6 +3,9 @@
 A full-stack subscription billing platform built with **Next.js**, **TypeScript**, **Prisma**, **PostgreSQL**, and **Stripe**. The application enables users to register, authenticate, subscribe to plans, manage subscriptions, and track payment history through a secure and scalable architecture.
 
 ---
+<img width="1897" height="907" alt="image" src="https://github.com/user-attachments/assets/ced4c051-26e4-4543-b606-813310d7df80" />
+<img width="1895" height="906" alt="image" src="https://github.com/user-attachments/assets/c9163976-c74b-4669-ad8e-4ef8286b5352" />
+
 
 # Objective
 
