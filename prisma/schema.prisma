@@ -22,10 +22,12 @@ model Plan {
   id            String          @id @default(cuid())
   name          String          @unique
   slug          String          @unique
+ 
   description   String?
   priceInCents  Int
   currency      String          @default("USD")
   interval      BillingInterval @default(MONTHLY)
+  stripePriceId String?         @unique 
   features      Json
   isPopular     Boolean         @default(false)
   isActive      Boolean         @default(true)
