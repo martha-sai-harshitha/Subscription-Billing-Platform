@@ -16,24 +16,40 @@ export async function POST(): Promise<NextResponse> {
       );
     }
 
-    const subscription = await prisma.subscription.findFirst({
-      where: {
-        userId: user.id,
-        status: "ACTIVE",
-        cancelAtPeriodEnd: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const subscription =
+      await prisma.subscription.findFirst({
+        where: {
+          userId: user.id,
+          status: "ACTIVE",
+        },
+        include: {
+          plan: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-    if (!subscription || !subscription.gatewaySubscriptionId) {
+    if (
+      !subscription ||
+      !subscription.gatewaySubscriptionId
+    ) {
       return NextResponse.json(
         {
           error:
-            "No active subscription scheduled for cancellation was found.",
+            "No active subscription found to resume",
         },
         { status: 404 },
+      );
+    }
+
+    if (!subscription.cancelAtPeriodEnd) {
+      return NextResponse.json(
+        {
+          message:
+            "Your subscription is already active and is not scheduled for cancellation.",
+        },
+        { status: 200 },
       );
     }
 
@@ -51,14 +67,16 @@ export async function POST(): Promise<NextResponse> {
     const currentPeriodStart =
       subscriptionItem?.current_period_start
         ? new Date(
-            subscriptionItem.current_period_start * 1000,
+            subscriptionItem.current_period_start *
+              1000,
           )
         : subscription.currentPeriodStart;
 
     const currentPeriodEnd =
       subscriptionItem?.current_period_end
         ? new Date(
-            subscriptionItem.current_period_end * 1000,
+            subscriptionItem.current_period_end *
+              1000,
           )
         : subscription.currentPeriodEnd;
 
@@ -70,16 +88,36 @@ export async function POST(): Promise<NextResponse> {
         data: {
           cancelAtPeriodEnd:
             stripeSubscription.cancel_at_period_end,
-          cancelledAt: null,
           currentPeriodStart,
           currentPeriodEnd,
+          status: "ACTIVE",
+          cancelledAt: null,
+        },
+        include: {
+          plan: true,
         },
       });
 
+    console.log(
+      "Subscription resumed successfully:",
+      updatedSubscription.id,
+    );
+
     return NextResponse.json({
       message:
-        "Subscription resumed successfully. Automatic renewal is active again.",
-      subscription: updatedSubscription,
+        "Your subscription has been resumed successfully.",
+      subscription: {
+        id: updatedSubscription.id,
+        status: updatedSubscription.status,
+        cancelAtPeriodEnd:
+          updatedSubscription.cancelAtPeriodEnd,
+        currentPeriodStart:
+          updatedSubscription.currentPeriodStart,
+        currentPeriodEnd:
+          updatedSubscription.currentPeriodEnd,
+        planName:
+          updatedSubscription.plan.name,
+      },
     });
   } catch (error) {
     const message =
@@ -87,7 +125,10 @@ export async function POST(): Promise<NextResponse> {
         ? error.message
         : "Unable to resume subscription";
 
-    console.error("Resume subscription error:", error);
+    console.error(
+      "Resume subscription error:",
+      error,
+    );
 
     return NextResponse.json(
       { error: message },

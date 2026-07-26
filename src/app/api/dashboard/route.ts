@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
-
+import { ChangePlanButton } from "@/components/ChangePlanButton";
 export async function GET(): Promise<Response> {
   try {
     const user = await getCurrentUser();

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { getCurrentUser } from "@/lib/current-user";
+import { sendCancellationEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,9 @@ export async function POST(): Promise<NextResponse> {
       where: {
         userId: user.id,
         status: "ACTIVE",
+      },
+      include: {
+        plan: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -79,15 +83,59 @@ export async function POST(): Promise<NextResponse> {
           currentPeriodStart,
           currentPeriodEnd,
 
-          // Keep this null until Stripe actually cancels it.
+          // Keep ACTIVE until Stripe ends the subscription.
+          status: "ACTIVE",
           cancelledAt: null,
         },
+        include: {
+          plan: true,
+        },
       });
+
+    try {
+      console.log(
+        "Sending cancellation email to:",
+        user.email,
+      );
+
+      const emailResult =
+        await sendCancellationEmail({
+          to: "marthasaiharshitha23@gmail.com",
+          name: user.name,
+          planName:
+            updatedSubscription.plan.name,
+          accessEndDate:
+            updatedSubscription.currentPeriodEnd,
+        });
+
+      console.log(
+        "Cancellation email sent successfully:",
+        emailResult,
+      );
+    } catch (emailError) {
+      // The subscription cancellation should still succeed
+      // even when the email provider fails.
+      console.error(
+        "Cancellation email failed:",
+        emailError,
+      );
+    }
 
     return NextResponse.json({
       message:
         "Your subscription will cancel at the end of the current billing period.",
-      subscription: updatedSubscription,
+      subscription: {
+        id: updatedSubscription.id,
+        status: updatedSubscription.status,
+        cancelAtPeriodEnd:
+          updatedSubscription.cancelAtPeriodEnd,
+        currentPeriodStart:
+          updatedSubscription.currentPeriodStart,
+        currentPeriodEnd:
+          updatedSubscription.currentPeriodEnd,
+        planName:
+          updatedSubscription.plan.name,
+      },
     });
   } catch (error) {
     const message =
@@ -95,7 +143,10 @@ export async function POST(): Promise<NextResponse> {
         ? error.message
         : "Unable to cancel subscription";
 
-    console.error("Cancel subscription error:", error);
+    console.error(
+      "Cancel subscription error:",
+      error,
+    );
 
     return NextResponse.json(
       { error: message },

@@ -1,305 +1,440 @@
-# Subscription Billing Platform
+Subscription Billing Platform
 
-A full-stack subscription billing platform built with **Next.js**, **TypeScript**, **Prisma**, **PostgreSQL**, and **Stripe**. The application enables users to register, authenticate, subscribe to plans, manage subscriptions, and track payment history through a secure and scalable architecture.
+A full-stack SaaS subscription billing application built with Next.js, Prisma, PostgreSQL, Stripe, and Resend.
 
----
+The platform supports user authentication, pricing plans, Stripe Checkout, subscription lifecycle management, payment and invoice tracking, email notifications, webhook idempotency, and plan upgrades or downgrades.
 
-# Objective
+Features
 
-The objective of this project is to build a production-ready subscription billing platform that demonstrates secure authentication, subscription management, payment processing, and webhook integration using modern web technologies.
+User registration and login
 
----
+Pricing page with active subscription plans
 
-# Features
+Stripe Checkout for first-time subscriptions
 
-- User Registration
-- Secure User Login
-- JWT Authentication using HTTP-only Cookies
-- Subscription Plans
-- Stripe Checkout Integration
-- Stripe Webhook Processing
-- Subscription Management
-- Payment History
-- Invoice Management
-- Responsive User Interface
-- PostgreSQL Database
-- Prisma ORM
+Subscription dashboard
 
----
+Cancel subscription at the end of the billing period
 
-# Tech Stack
+Resume a scheduled cancellation
 
-| Layer | Technology |
-|--------|------------|
-| Frontend | Next.js 15 + React + TypeScript |
-| Backend | Next.js API Routes |
-| Styling | Tailwind CSS |
-| Database | PostgreSQL (Neon) |
-| ORM | Prisma |
-| Authentication | JWT + HTTP-only Cookies |
-| Payment Gateway | Stripe (Test Mode) |
-| Email Notifications | Resend |
+Upgrade or downgrade an existing subscription
 
----
+Stripe proration handling
 
-# Project Structure
+Payment and invoice history
 
-```text
+Downloadable Stripe invoice links
+
+Subscription confirmation emails
+
+Payment success and failure emails
+
+Stripe webhook signature verification
+
+Webhook idempotency using stored Stripe event IDs
+
+Technology Stack
+
+Frontend: Next.js, React, TypeScript, Tailwind CSS
+
+Backend: Next.js Route Handlers
+
+Database: PostgreSQL
+
+ORM: Prisma
+
+Payments: Stripe
+
+Email: Resend
+
+Deployment: Vercel and Neon PostgreSQL
+
+Project Structure
+
 src/
-│
 ├── app/
+│   ├── api/
+│   │   ├── auth/
+│   │   ├── checkout/
+│   │   ├── subscription/
+│   │   │   ├── cancel/
+│   │   │   ├── resume/
+│   │   │   └── change-plan/
+│   │   └── webhooks/
+│   │       └── stripe/
+│   ├── dashboard/
+│   ├── login/
+│   ├── pricing/
+│   └── register/
 ├── components/
-├── lib/
+│   ├── CheckoutButton.tsx
+│   ├── ChangePlanButton.tsx
+│   └── SubscriptionActions.tsx
 ├── generated/
-├── middleware.ts
-└── prisma/
+│   └── prisma/
+└── lib/
+    ├── auth.ts
+    ├── current-user.ts
+    ├── email.ts
+    ├── prisma.ts
+    └── stripe.ts
 
 prisma/
-├── schema.prisma
+└── schema.prisma
 
-public/
+Prerequisites
 
-README.md
-```
+Node.js 20 or later
 
----
+npm
 
-# Installation
+PostgreSQL database
 
-Clone the repository
+Stripe account
 
-```bash
-git clone <repository-url>
-```
+Stripe CLI
 
-Navigate to the project
+Resend account
 
-```bash
-cd subscription-billing-platform
-```
+Installation
 
-Install dependencies
+Clone the repository and install dependencies:
 
-```bash
+git clone <your-repository-url>
+cd <your-project-folder>
 npm install
-```
 
----
+Environment Variables
 
-# Environment Variables
+Create a .env file in the project root:
 
-Create a `.env` file in the project root.
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require"
 
-```env
-DATABASE_URL=
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
-DIRECT_URL=
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
 
-JWT_SECRET=
+RESEND_API_KEY="re_..."
+EMAIL_FROM="Subscription Platform <onboarding@resend.dev>"
 
-STRIPE_SECRET_KEY=
+AUTH_SECRET="replace-with-a-secure-random-secret"
 
-STRIPE_WEBHOOK_SECRET=
+Do not commit the .env file to GitHub.
 
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+Database Setup
 
-RESEND_API_KEY=
-
-EMAIL_FROM=
-```
-
----
-
-# Database Setup
-
-Generate Prisma Client
-
-```bash
 npx prisma generate
-```
-
-Run Database Migrations
-
-```bash
-npx prisma migrate deploy
-```
-
-(Optional for development)
-
-```bash
+npx prisma migrate dev
 npx prisma studio
-```
 
----
+Stripe Plan Setup
 
-# Running the Application
+Create products and recurring prices in Stripe. Save each Stripe Price ID in the corresponding Plan record.
 
-Development
+Example plan data:
 
-```bash
+name: Starter
+description: Basic subscription plan
+priceInCents: 999
+currency: USD
+interval: MONTHLY
+stripePriceId: price_...
+isActive: true
+
+Run the Application
+
 npm run dev
-```
 
-Production
+Open:
 
-```bash
-npm run build
+http://localhost:3000
 
-npm start
-```
+Stripe Webhook Setup
 
----
+Authenticate the Stripe CLI:
 
-# Stripe Configuration
-
-Install Stripe CLI
-
-```bash
 stripe login
-```
 
-Start the webhook listener
+Forward events to the local webhook route:
 
-```bash
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
-```
 
-Copy the generated webhook secret into
+Copy the generated webhook secret into .env:
 
-```env
-STRIPE_WEBHOOK_SECRET=
-```
+STRIPE_WEBHOOK_SECRET="whsec_..."
 
----
-# Email Notifications
+Restart the development server after changing environment variables.
 
-The application supports transactional email notifications using **Resend**.
+Stripe Events Handled
 
-Notifications can be triggered for:
+checkout.session.completed
+customer.subscription.created
+customer.subscription.updated
+customer.subscription.deleted
+invoice.paid
+invoice.payment_failed
 
-- Subscription Activated
-- Payment Successful
-- Payment Failed
-- Subscription Cancelled
-- Subscription Resumed
-- Invoice Notification
+Webhook events are stored in the WebhookEvent table. The Stripe event ID is unique, which prevents duplicate processing.
 
-Example configuration:
+Subscription Flow
 
-```env
-RESEND_API_KEY=re_xxxxxxxxxxxxxxxxx
+New Subscription
 
-EMAIL_FROM=noreply@yourdomain.com
-```
+The user selects a plan on the pricing page.
 
-# Authentication Flow
+The application creates a Stripe Checkout Session.
 
-1. User registers.
-2. User logs in.
-3. JWT token is generated.
-4. Token is stored in an HTTP-only cookie.
-5. Protected routes validate the JWT before allowing access.
+The user completes payment in Stripe Checkout.
 
----
+Stripe sends checkout.session.completed.
 
-# Subscription Flow
+The webhook creates or updates the local subscription.
 
-1. User selects a subscription plan.
-2. A Stripe Checkout Session is created.
-3. User completes payment through Stripe Checkout.
-4. Stripe sends webhook events.
-5. Subscription details are synchronized with the database.
-6. Payment information is stored.
-7. User can view subscription details from the dashboard.
+Payment and invoice records are saved.
 
----
+Confirmation and invoice emails are sent.
 
-# Database Models
+Cancel Subscription
 
-- User
-- Plan
-- Subscription
-- Payment
-- Invoice
-- WebhookEvent
+The user clicks Cancel Subscription.
 
----
+Stripe sets cancel_at_period_end to true.
 
-# API Endpoints
+The subscription remains active until the current billing period ends.
 
-## Authentication
+Resume Subscription
 
-- POST `/api/auth/register`
-- POST `/api/auth/login`
-- POST `/api/auth/logout`
+The user clicks Resume Subscription.
 
-## Plans
+Stripe sets cancel_at_period_end to false.
 
-- GET `/api/plans`
+The subscription continues normally.
 
-## Checkout
+Upgrade or Downgrade
 
-- POST `/api/checkout`
+The user selects another plan from the dashboard.
 
-## Subscription
+The application retrieves the existing Stripe subscription.
 
-- GET `/api/subscription`
-- POST `/api/subscription/cancel`
-- POST `/api/subscription/resume`
+The existing subscription item price is replaced.
 
-## Webhooks
+Stripe calculates the prorated amount.
 
-- POST `/api/webhooks/stripe`
+Stripe creates and attempts to pay the prorated invoice.
 
----
+Prisma is updated after Stripe successfully applies the change.
 
-# Project Highlights
+The dashboard refreshes and shows the new plan.
 
-- Modern Next.js App Router Architecture
-- Secure JWT Authentication
-- Stripe Checkout Integration
-- Stripe Webhook Processing
-- Prisma ORM with PostgreSQL
-- Transactional Email Notifications using Resend
-- Responsive UI with Tailwind CSS
-- Email Notification Delivery
-- Modular and Scalable Code Structure
+The plan-change flow reuses the existing Stripe subscription. It does not create a second customer, Checkout Session, or subscription.
 
----
+Proration Configuration
 
-# Future Enhancements
+The plan-change route uses:
 
-- Email notifications using Resend
-- Admin Dashboard
-- Coupon and Discount Support
-- Team Subscriptions
-- Analytics Dashboard
-- Multiple Payment Provider Support
+proration_behavior: "always_invoice"
+payment_behavior: "pending_if_incomplete"
 
----
+This means Stripe immediately invoices the prorated difference. If payment fails, the current subscription remains active and the local database is not changed prematurely.
 
-# Testing
+Important API Routes
 
-The following scenarios have been considered during development:
+Method
 
-- User Registration
-- User Login
-- Subscription Checkout
-- Stripe Webhook Processing
-- Payment Success
-- Payment Failure
-- Subscription Cancellation
-- Subscription Resumption
-- Invoice Generation
+Route
 
----
+Purpose
 
-# Author
+POST
 
-**Sai Harshitha**
+/api/auth/register
 
----
+Create a user account
 
-# License
+POST
 
-This project was developed as part of a technical assessment for educational and evaluation purposes.
+/api/auth/login
+
+Authenticate a user
+
+POST
+
+/api/auth/logout
+
+Sign out
+
+POST
+
+/api/checkout
+
+Create the first Stripe Checkout Session
+
+POST
+
+/api/subscription/cancel
+
+Schedule cancellation
+
+POST
+
+/api/subscription/resume
+
+Resume a scheduled cancellation
+
+POST
+
+/api/subscription/change-plan
+
+Upgrade or downgrade a plan
+
+POST
+
+/api/webhooks/stripe
+
+Process Stripe events
+
+Testing
+
+Use Stripe's standard test card:
+
+Card number: 4242 4242 4242 4242
+Expiry date: Any future date
+CVC: Any three digits
+ZIP code: Any valid value
+
+Test a New Subscription
+
+Register or log in.
+
+Open /pricing.
+
+Select a plan.
+
+Complete Stripe Checkout.
+
+Confirm the subscription appears on /dashboard.
+
+Verify Subscription, Payment, and Invoice records in Prisma Studio.
+
+Test Cancellation and Resume
+
+Click Cancel Subscription.
+
+Confirm cancelAtPeriodEnd becomes true.
+
+Click Resume Subscription.
+
+Confirm cancelAtPeriodEnd becomes false.
+
+Test Upgrade or Downgrade
+
+Open the dashboard.
+
+Select another plan.
+
+Confirm the dashboard shows the new plan.
+
+Confirm the same Stripe subscription ID is retained.
+
+Confirm no duplicate local subscription is created.
+
+Confirm planId changes in Prisma Studio.
+
+Confirm a prorated invoice appears in Stripe.
+
+Build
+
+npm run build
+npm start
+
+Deployment
+
+Vercel
+
+Push the project to GitHub.
+
+Import the repository into Vercel.
+
+Add all environment variables.
+
+Deploy the project.
+
+Set NEXT_PUBLIC_APP_URL to the deployed URL.
+
+Example:
+
+NEXT_PUBLIC_APP_URL="https://your-project.vercel.app"
+
+Production Stripe Webhook
+
+Create this endpoint in Stripe:
+
+https://your-project.vercel.app/api/webhooks/stripe
+
+Subscribe it to the same Stripe events listed above, then add the production webhook signing secret to the Vercel environment variables.
+
+Security
+
+Stripe webhook signatures are verified.
+
+Passwords are stored as hashes.
+
+Protected routes require authentication.
+
+Stripe secret keys remain server-side.
+
+Webhook events are processed idempotently.
+
+Plan IDs and Stripe Price IDs are validated on the server.
+
+Payment status is never trusted from the browser.
+
+Known Limitations
+
+Only one active subscription is expected per user.
+
+The project assumes one recurring item per Stripe subscription.
+
+Tax calculation is not included.
+
+Production email sending requires a verified Resend domain.
+
+Additional payment recovery UI may be needed for failed prorated plan changes.
+
+Future Improvements
+
+Stripe Customer Portal
+
+Annual plans
+
+Trial periods
+
+Coupons and discounts
+
+Tax calculation
+
+Admin dashboard
+
+Usage-based billing
+
+Role-based access control
+
+Automated integration tests
+
+Audit logs
+
+Useful Commands
+
+npm install
+npm run dev
+npm run build
+npm start
+
+npx prisma generate
+npx prisma migrate dev
+npx prisma studio
+
+stripe login
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
