@@ -34,38 +34,38 @@ A full-stack SaaS subscription billing application built with Next.js, Prisma, P
 
 ## Project Structure
 
-```text
-src/
-├── app/
-│   ├── api/
-│   │   ├── auth/
-│   │   ├── checkout/
-│   │   ├── subscription/
-│   │   │   ├── cancel/
-│   │   │   ├── resume/
-│   │   │   └── change-plan/
-│   │   └── webhooks/
-│   │       └── stripe/
-│   ├── dashboard/
-│   ├── login/
-│   ├── pricing/
-│   └── register/
-├── components/
+src
+├── app
+│   ├── api
+│   │   ├── auth
+│   │   ├── checkout
+│   │   ├── subscription
+│   │   │   ├── cancel
+│   │   │   ├── resume
+│   │   │   └── change-plan
+│   │   └── webhooks
+│   │       └── stripe
+│   ├── dashboard
+│   ├── login
+│   ├── pricing
+│   └── register
+├── components
 │   ├── CheckoutButton.tsx
 │   ├── ChangePlanButton.tsx
 │   └── SubscriptionActions.tsx
-├── generated/
-│   └── prisma/
-└── lib/
+├── generated
+│   └── prisma
+└── lib
     ├── auth.ts
     ├── current-user.ts
     ├── email.ts
     ├── prisma.ts
     └── stripe.ts
 
-prisma/
+prisma
 └── schema.prisma
-```
+ 
+   
 
 ## Prerequisites
 
