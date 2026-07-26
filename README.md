@@ -2,7 +2,11 @@ Subscription Billing Platform
 
 A full-stack SaaS subscription billing application built with Next.js, Prisma, PostgreSQL, Stripe, and Resend.
 
-The platform supports user authentication, pricing plans, Stripe Checkout, subscription lifecycle management, payment and invoice tracking, email notifications, webhook idempotency, and plan upgrades or downgrades.
+ 
+<img width="1897" height="907" alt="image" src="https://github.com/user-attachments/assets/ced4c051-26e4-4543-b606-813310d7df80" />
+<img width="1895" height="906" alt="image" src="https://github.com/user-attachments/assets/c9163976-c74b-4669-ad8e-4ef8286b5352" />
+
+>>>>>>> a80d848ba2257aa0e2267c913e966bca6ac22fb8
 
 Features
 
@@ -255,6 +259,7 @@ Create a user account
 
 POST
 
+<<<<<<< HEAD
 /api/auth/login
 
 Authenticate a user
@@ -438,3 +443,6 @@ npx prisma studio
 
 stripe login
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
+=======
+This project was developed as part of a technical assessment for educational and evaluation purposes.
+>>>>>>> a80d848ba2257aa0e2267c913e966bca6ac22fb8
